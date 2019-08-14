@@ -1,3 +1,3 @@
-# Useage
+# Usage
 
-    docker run -p 8080:8080 -d bluespice/elasticsearch
+    docker run -p 9200:9200 -d bluespice/elasticsearch
