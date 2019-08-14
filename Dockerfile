@@ -1,17 +1,22 @@
-FROM alpine:3.9
+FROM ubuntu:bionic 
 
-RUN apk add --no-cache openjdk8
-RUN adduser -D -u 1000 elasticsearch
+ENV DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /opt
-RUN  wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-6.3.2.tar.gz; \
-	tar xf elasticsearch-oss-6.3.2.tar.gz; \
-	rm elasticsearch-oss-6.3.2.tar.gz; \
-	mv elasticsearch-6.3.2 elasticsearch
+RUN sed -i 's/archive.ubuntu.com/de.archive.ubuntu.com/g' /etc/apt/sources.list
 
-USER elasticsearch
-RUN /opt/elasticsearch/bin/elasticsearch-plugin install --batch ingest-attachments
+RUN apt-get update
+RUN apt-get -y --no-install-recommends install openjdk-8-jre-headless wget gnupg2 
+
+RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -; \ 
+    echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list; \ 
+    apt-get update; \ 
+    apt-get -y install elasticsearch=6.3.1; \ 
+    apt-mark hold elasticsearch; \ 
+    /usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
+
+RUN echo "#!/bin/bash \n /etc/init.d/elasticsearch start \n sleep infinity" > /opt/init.sh 
+RUN chmod +x /opt/init.sh
 
 EXPOSE "9200"
 
-CMD [ "/opt/elasticsearch/bin/elasticsearch" ]
+ENTRYPOINT ["/opt/init.sh"]
